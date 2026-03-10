@@ -9,9 +9,9 @@ const Incidencias = () => {
     const [formData, setFormData] = useState({
         student_id: '',
         date: new Date().toISOString().substring(0, 16),
-        leve_faction: '', leve_other: '',
-        grave_faction: '', grave_other: '',
-        muy_grave_faction: '', muy_grave_other: '',
+        leve_faction: [], leve_other: '',
+        grave_faction: [], grave_other: '',
+        muy_grave_faction: [], muy_grave_other: '',
         description: '', disciplinary: '', acuerdos_compromisos: ''
     });
     const [isFormOpen, setIsFormOpen] = useState(false);
@@ -43,8 +43,8 @@ const Incidencias = () => {
             setIsFormOpen(false);
             setFormData({
                 student_id: '', date: new Date().toISOString().substring(0, 16),
-                leve_faction: '', leve_other: '', grave_faction: '', grave_other: '',
-                muy_grave_faction: '', muy_grave_other: '', description: '', disciplinary: '', acuerdos_compromisos: ''
+                leve_faction: [], leve_other: '', grave_faction: [], grave_other: '',
+                muy_grave_faction: [], muy_grave_other: '', description: '', disciplinary: '', acuerdos_compromisos: ''
             });
             fetchIncidencias();
         } catch (err) { console.error(err); }
@@ -72,6 +72,36 @@ const Incidencias = () => {
     const filteredItems = incidencias.filter(i =>
         i.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         i.student_id.toString().includes(searchTerm)
+    );
+
+    const handleCheckboxChange = (field, value) => {
+        setFormData(prev => {
+            const current = prev[field] || [];
+            if (current.includes(value)) {
+                return { ...prev, [field]: current.filter(item => item !== value) };
+            } else {
+                return { ...prev, [field]: [...current, value] };
+            }
+        });
+    };
+
+    const FactionSelector = ({ field, label, badgeClass }) => (
+        <div style={{ marginBottom: '1rem' }}>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>{label}</p>
+            <div style={{ display: 'flex', gap: '0.8rem', flexWrap: 'wrap' }}>
+                {['I', 'II', 'III', 'IV', 'V'].map(opt => (
+                    <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer', background: formData[field]?.includes(opt) ? 'rgba(99, 102, 241, 0.2)' : 'rgba(255,255,255,0.05)', padding: '0.3rem 0.6rem', borderRadius: '0.4rem', border: `1px solid ${formData[field]?.includes(opt) ? 'var(--primary)' : 'var(--glass-border)'}` }}>
+                        <input
+                            type="checkbox"
+                            checked={formData[field]?.includes(opt)}
+                            onChange={() => handleCheckboxChange(field, opt)}
+                            style={{ display: 'none' }}
+                        />
+                        <span style={{ fontSize: '0.8rem', fontWeight: '600' }}>{opt}</span>
+                    </label>
+                ))}
+            </div>
+        </div>
     );
 
     return (
@@ -123,19 +153,19 @@ const Incidencias = () => {
                         {/* Factions Section */}
                         <div className="glass-card" style={{ padding: '1rem', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
                             <h4 className="badge-low" style={{ marginBottom: '1rem', padding: '0.4rem' }}>Falta Leve</h4>
-                            <input type="text" placeholder="Fracción" className="input-field" value={formData.leve_faction} onChange={(e) => setFormData({ ...formData, leve_faction: e.target.value })} style={{ marginBottom: '0.5rem' }} />
+                            <FactionSelector field="leve_faction" label="Artículos/Fracciones" badgeClass="badge-low" />
                             <input type="text" placeholder="Otros Detalles" className="input-field" value={formData.leve_other} onChange={(e) => setFormData({ ...formData, leve_other: e.target.value })} />
                         </div>
 
                         <div className="glass-card" style={{ padding: '1rem', border: '1px solid rgba(245, 158, 11, 0.3)' }}>
                             <h4 className="badge-mid" style={{ marginBottom: '1rem', padding: '0.4rem' }}>Falta Grave</h4>
-                            <input type="text" placeholder="Fracción" className="input-field" value={formData.grave_faction} onChange={(e) => setFormData({ ...formData, grave_faction: e.target.value })} style={{ marginBottom: '0.5rem' }} />
+                            <FactionSelector field="grave_faction" label="Artículos/Fracciones" badgeClass="badge-mid" />
                             <input type="text" placeholder="Otros Detalles" className="input-field" value={formData.grave_other} onChange={(e) => setFormData({ ...formData, grave_other: e.target.value })} />
                         </div>
 
                         <div className="glass-card" style={{ padding: '1rem', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
                             <h4 className="badge-high" style={{ marginBottom: '1rem', padding: '0.4rem' }}>Falta Muy Grave</h4>
-                            <input type="text" placeholder="Fracción" className="input-field" value={formData.muy_grave_faction} onChange={(e) => setFormData({ ...formData, muy_grave_faction: e.target.value })} style={{ marginBottom: '0.5rem' }} />
+                            <FactionSelector field="muy_grave_faction" label="Artículos/Fracciones" badgeClass="badge-high" />
                             <input type="text" placeholder="Otros Detalles" className="input-field" value={formData.muy_grave_other} onChange={(e) => setFormData({ ...formData, muy_grave_other: e.target.value })} />
                         </div>
 
@@ -191,7 +221,8 @@ const Incidencias = () => {
                         </thead>
                         <tbody>
                             {filteredItems.map(inc => {
-                                const level = inc.muy_grave_faction ? 'Muy Grave' : (inc.grave_faction ? 'Grave' : 'Leve');
+                                const level = (inc.muy_grave_faction && inc.muy_grave_faction.length > 0) ? 'Muy Grave' :
+                                    ((inc.grave_faction && inc.grave_faction.length > 0) ? 'Grave' : 'Leve');
                                 const badgeClass = level === 'Muy Grave' ? 'badge-high' : (level === 'Grave' ? 'badge-mid' : 'badge-low');
                                 return (
                                     <tr key={inc.id}>
